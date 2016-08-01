@@ -31,13 +31,4 @@ public abstract class AnnotatorRepository {
 
         return new AnnotatorMetadata(id, annotatorName);
     }
-
-
-    /**
-     * Clears the annotator table and all the other tables that depend on it
-     */
-    @Transaction
-    public void clear() {
-        dao().clear();
-    }
 }

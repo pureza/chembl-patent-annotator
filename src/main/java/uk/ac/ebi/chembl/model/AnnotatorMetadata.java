@@ -1,11 +1,12 @@
 package uk.ac.ebi.chembl.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * The metadata associated with an annotator
  */
-public class AnnotatorMetadata {
+public class AnnotatorMetadata implements Serializable {
 
     /** Annotator's identifier */
     private final int id;

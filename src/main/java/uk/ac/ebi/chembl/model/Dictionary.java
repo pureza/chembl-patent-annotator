@@ -1,6 +1,7 @@
 package uk.ac.ebi.chembl.model;
 
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Map;
 /**
  * Represents a Dictionary specific for an Annotator
  */
-public class Dictionary {
+public class Dictionary implements Serializable {
 
     /** The null dictionary */
     private static final Dictionary EMPTY_DICTIONARY = new Dictionary(null, Collections.emptyList());

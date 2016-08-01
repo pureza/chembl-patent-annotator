@@ -71,13 +71,4 @@ public abstract class PatentMetadataRepository {
             dao().deleteBatch(patentIds);
         }
     }
-
-
-    /**
-     * Deletes the metadata for all patents from the database
-     */
-    @Transaction
-    public void clear() {
-        dao().clear();
-    }
 }

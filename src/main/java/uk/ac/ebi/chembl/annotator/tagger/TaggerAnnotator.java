@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.chembl.annotator.Annotator;
 import uk.ac.ebi.chembl.model.Annotation;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -19,31 +20,22 @@ import java.util.stream.Collectors;
  */
 public class TaggerAnnotator implements Annotator {
 
-    final static String ENTITIES_TSV = "entities.tsv";
+    public static final Path DICTIONARY_HOME = Paths.get(File.separator, "tagger_dictionary");
 
-    final static String NAMES_TSV = "names.tsv";
+    public static final String ENTITIES_TSV = "entities.tsv";
 
-    final static String GLOBAL_TSV = "global.tsv";
+    public static final String NAMES_TSV = "names.tsv";
+
+    public static final String GLOBAL_TSV = "global.tsv";
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private Tagger tagger;
 
 
-    static {
-        // Loads the Tagger library
-        // Requires the command line argument -Djava.library.path=/path/to/libtagger
-        System.loadLibrary("tagger");
-    }
-
-
-    public TaggerAnnotator(String dictionariesHome) {
+    public TaggerAnnotator(String entitiesPath, String namesPath, String globalPath) {
         // Initialize tagger
-        Path entitiesTsv = Paths.get(dictionariesHome, ENTITIES_TSV);
-        Path namesTsv = Paths.get(dictionariesHome, NAMES_TSV);
-        Path globalTsv = Paths.get(dictionariesHome, GLOBAL_TSV);
-
-        tagger = new Tagger(entitiesTsv.toString(), namesTsv.toString(), globalTsv.toString());
+        tagger = new Tagger(entitiesPath, namesPath, globalPath);
         logger.debug("Tagger initialized!");
     }
 
@@ -57,8 +49,4 @@ public class TaggerAnnotator implements Annotator {
                 .collect(Collectors.toList());
 
     }
-
-
-    @Override
-    public void shutdown() { /* Nothing to do */ }
 }

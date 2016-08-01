@@ -1,9 +1,9 @@
 package uk.ac.ebi.chembl;
 
-import org.apache.commons.io.IOUtils;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.Handle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +18,11 @@ import org.springframework.context.annotation.Primary;
 import uk.ac.ebi.chembl.annotator.Annotator;
 import uk.ac.ebi.chembl.annotator.AnnotatorFactory;
 import uk.ac.ebi.chembl.annotator.DictionaryReader;
-import uk.ac.ebi.chembl.jobs.AnnotationPipeline;
+import uk.ac.ebi.chembl.jobs.AnnotatorJob;
 import uk.ac.ebi.chembl.model.AnnotatorMetadata;
 import uk.ac.ebi.chembl.model.Dictionary;
 import uk.ac.ebi.chembl.services.DictionaryAnalyzer;
 import uk.ac.ebi.chembl.services.EnsemblService;
-import uk.ac.ebi.chembl.services.IdgAnnotationWriter;
 import uk.ac.ebi.chembl.services.IdgTargetLoader;
 import uk.ac.ebi.chembl.storage.*;
 
@@ -47,10 +46,9 @@ public class AnnotatorApp {
      * The main database, where we write the patent annotations to
      */
     @Bean
-    DBI patentAnnotHandle(@Value("${patentannot.url}") String url,
+    DBI patentAnnotHandle(@Value("${${patentannot.url}}") String url,
                           @Value("${patentannot.user}") String user,
-                          @Value("${patentannot.password}") String password,
-                          @Value("${clear-db:#{false}}") boolean clearDb) {
+                          @Value("${patentannot.password}") String password) {
         PoolProperties props = new PoolProperties();
         props.setDriverClassName(com.mysql.jdbc.Driver.class.getName());
         props.setUrl(url);
@@ -59,13 +57,7 @@ public class AnnotatorApp {
 
         org.apache.tomcat.jdbc.pool.DataSource dataSource = new org.apache.tomcat.jdbc.pool.DataSource();
         dataSource.setPoolProperties(props);
-
-        DBI dbi = new DBI(dataSource);
-
-        // Clears the database if --clear-db=true
-        clearDatabaseIfRequested(dbi, clearDb);
-
-        return dbi;
+        return new DBI(dataSource);
     }
 
 
@@ -242,8 +234,12 @@ public class AnnotatorApp {
     }
 
 
-    @Autowired
-    private AnnotationPipeline pipeline;
+    @Bean
+    JavaSparkContext sparkContext() {
+        SparkConf conf = new SparkConf().setAppName("Patent annotator");
+        return new JavaSparkContext(conf);
+    }
+
 
     @Autowired
     private DictionaryAnalyzer dictionaryAnalyzer;
@@ -260,14 +256,14 @@ public class AnnotatorApp {
     @Autowired
     private EnsemblService ensemblService;
 
-    @Autowired
-    private IdgAnnotationWriter idgAnnotationWriter;
-
     @Value("${email.to:#{null}}")
     private String emailTo;
 
     @Value("${skip.output:#{false}}")
     private boolean skipOutput;
+
+    @Autowired
+    private AnnotatorJob annotatorJob;
 
 
     /**
@@ -300,57 +296,15 @@ public class AnnotatorApp {
      */
     public void annotate() {
         try {
-            pipeline.run();
+            annotatorJob.run();
         } catch (Exception ex) {
             logger.error("The annotation process aborted due to an unexpected error. Please, restart the application to retry.", ex);
             System.exit(1);
         }
-    }
 
+        sparkContext().close();
+        System.clearProperty("spark.driver.port");}
 
-    /**
-     * Writes the output files for IDG, unless --skip.output=true
-     */
-    public void writeOutput() {
-        if (skipOutput) {
-            logger.warn("IDG output file will not be written because --skip.output=true");
-            return;
-        }
-
-        try {
-            idgAnnotationWriter.write();
-        } catch (Exception ex) {
-            logger.error("An error occurred while writing the IDG annotations", ex);
-            System.exit(1);
-        }
-    }
-
-
-    /**
-     * Clears the database, if --clear-db=true
-     */
-    private void clearDatabaseIfRequested(DBI patentAnnotHandle, boolean clearDb) {
-        if (clearDb) {
-            try {
-                for (int i = 10; i > 0; i--) {
-                    logger.warn("*** GOING TO CLEAR THE DATABASE IN " + i + " SECOND" + (i == 1 ? "" : "S") + " ***");
-                    Thread.sleep(1000);
-                }
-
-                logger.info("Clearing the database...");
-
-                String sql = IOUtils.toString(getClass().getResourceAsStream("/ddl.mysql.sql"));
-
-                Handle handle = patentAnnotHandle.open();
-                handle.execute(sql);
-                handle.close();
-
-                logger.warn("Database cleared!");
-            } catch (Exception ex) {
-                logger.error("An error occurred while clearing the database", ex);
-            }
-        }
-    }
 
 
     /**
@@ -431,7 +385,6 @@ public class AnnotatorApp {
         AnnotatorApp annotatorApp = ctx.getBean(AnnotatorApp.class);
         annotatorApp.prepare();
         annotatorApp.annotate();
-        annotatorApp.writeOutput();
         logger.warn("The annotation process finished successfully. Terminating...");
     }
 }

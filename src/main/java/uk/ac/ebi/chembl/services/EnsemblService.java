@@ -1,5 +1,6 @@
 package uk.ac.ebi.chembl.services;
 
+import com.clearspring.analytics.util.Lists;
 import com.google.common.base.Splitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,6 +155,6 @@ public class EnsemblService {
      * Returns the list of Ensembl releases to check, in order
      */
     private List<String> ensemblReleases() {
-        return Splitter.on(",").trimResults().splitToList(ensemblReleases);
+        return Lists.newArrayList(Splitter.on(",").trimResults().split(ensemblReleases));
     }
 }

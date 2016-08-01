@@ -1,5 +1,9 @@
 package uk.ac.ebi.chembl.storage;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,20 +15,15 @@ import uk.ac.ebi.chembl.model.PatentXml;
 import uk.ac.ebi.chembl.storage.dao.PatentXmlDao;
 
 import javax.annotation.PostConstruct;
-import java.io.*;
-import java.nio.file.Files;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import static java.util.stream.Collectors.joining;
 
 /**
  * Repository for Patent's XML
@@ -38,6 +37,9 @@ public class PatentXmlRepository {
     private Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
+    private JavaSparkContext sparkContext;
+
+    @Autowired
     @Qualifier("alexandriaHandle")
     private DBI alexandriaHandle;
 
@@ -47,7 +49,7 @@ public class PatentXmlRepository {
     private PatentXmlDao dao;
 
     /** Regular expression to extract US/67/45 from US-1234567-A1 */
-    private final Pattern pathPattern = Pattern.compile("(\\w\\w)-\\w*(\\w\\w)(\\w\\w)-");
+    public static final Pattern PATH_PATTERN = Pattern.compile("(\\w\\w)-\\w*(\\w\\w)(\\w\\w)-");
 
 
     @PostConstruct
@@ -109,23 +111,16 @@ public class PatentXmlRepository {
 
 
     /**
-     * Reads a patent from the file system
-     */
-    public String read(String patentNumber) throws IOException {
-        Path path = getPath(patentNumber);
-        byte[] bytes = Files.readAllBytes(path);
-        GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(bytes));
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        return reader.lines().collect(joining("\n"));
-    }
-
-
-    /**
      * Checks if a patent exists in the file system
      */
     public boolean exists(String patentNumber) {
-        return Files.exists(getPath(patentNumber));
+        try {
+            Configuration conf = sparkContext.hadoopConfiguration();
+            FileSystem fs = FileSystem.get(conf);
+            return fs.exists(getPath(patentNumber));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
 
@@ -133,42 +128,36 @@ public class PatentXmlRepository {
      * Writes a patent to the file system
      */
     public void write(PatentXml patentXml) throws IOException {
-        byte[] bytes = patentXml.getXml().getBytes();
+        byte[] xml = patentXml.getXml().getBytes();
 
-        // GZIP the content
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GZIPOutputStream gzipOut = new GZIPOutputStream(out);
-        gzipOut.write(bytes);
-        gzipOut.close();
+        Configuration conf = sparkContext.hadoopConfiguration();
+        FileSystem fs = FileSystem.get(conf);
 
-        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+        org.apache.hadoop.fs.Path path = getPath(patentXml.getPatentNumber());
 
-        Path path = getPath(patentXml.getPatentNumber());
-        Files.createDirectories(path.getParent());
-        Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
+        try (FSDataOutputStream out = fs.create(path);
+             GZIPOutputStream gzOut = new GZIPOutputStream(out)) {
+            gzOut.write(xml);
+        }
+
+        logger.debug("Downloaded XML for patent " + patentXml.getPatentNumber());
     }
 
 
-    /**
-     * Deletes a patent from the file system
-     */
-    public void delete(String patentNumber) throws IOException {
-        Path path = getPath(patentNumber);
-        Files.deleteIfExists(path);
-    }
-
-
-    private Path getPath(String patentNumber) {
-        Matcher matcher = pathPattern.matcher(patentNumber);
+    private org.apache.hadoop.fs.Path getPath(String patentNumber) {
+        Matcher matcher = PATH_PATTERN.matcher(patentNumber);
+        Path path;
         if (matcher.find()) {
             String authority = matcher.group(1);
             String level1 = matcher.group(3);
             String level2 = matcher.group(2);
 
-            return Paths.get(patentsXmlHome, authority, level1, level2, patentNumber + ".xml.gz");
+            path = Paths.get(patentsXmlHome, authority, level1, level2, patentNumber + ".xml.gz");
         } else {
             // A few patents don't match the pattern: put them all together inside foo/
-            return Paths.get(patentsXmlHome, "foo", patentNumber + ".xml.gz");
+            path = Paths.get(patentsXmlHome, "foo", patentNumber + ".xml.gz");
         }
+
+        return new org.apache.hadoop.fs.Path(path.toString());
     }
 }

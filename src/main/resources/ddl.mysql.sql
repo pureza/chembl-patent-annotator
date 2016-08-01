@@ -10,7 +10,7 @@ DROP TABLE IF EXISTS bio_entity;
 DROP TABLE IF EXISTS bio_type;
 DROP TABLE IF EXISTS annotator;
 
-# An annotator
+# An annotator, such as 'tagger' or 'neji'
 CREATE TABLE annotator (
   annotator_id  INT(11)     NOT NULL AUTO_INCREMENT,
   name          VARCHAR(50) NOT NULL,

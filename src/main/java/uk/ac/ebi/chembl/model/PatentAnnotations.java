@@ -1,12 +1,13 @@
 package uk.ac.ebi.chembl.model;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 /**
  * The annotations found in a patent
  */
-public class PatentAnnotations {
+public class PatentAnnotations implements Serializable {
 
     /** Patent number */
     private final String patentNumber;
@@ -28,5 +29,13 @@ public class PatentAnnotations {
 
     public Map<Field, List<List<Annotation>>> getAnnotations() {
         return annotations;
+    }
+
+
+    @Override
+    public String toString() {
+        return "PatentAnnotations{" +
+                "patentNumber='" + patentNumber + '\'' +
+                '}';
     }
 }

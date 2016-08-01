@@ -53,12 +53,4 @@ public class PatentAnnotator {
 
         return new PatentAnnotations(patent.getPatentNumber(), annotations);
     }
-
-
-    /**
-     * Shuts down the annotator
-     */
-    public void shutdown() {
-        annotator.shutdown();
-    }
 }

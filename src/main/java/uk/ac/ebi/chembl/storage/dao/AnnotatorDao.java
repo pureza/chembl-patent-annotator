@@ -27,13 +27,6 @@ public interface AnnotatorDao {
 
 
     /**
-     * Clears the annotator table and all other tables that depend on it
-     */
-    @SqlUpdate("DELETE FROM annotator")
-    void clear();
-
-
-    /**
      * Closes the DAO and releases any allocated database resources
      */
     void close();

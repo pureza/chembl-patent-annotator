@@ -1,12 +1,13 @@
 package uk.ac.ebi.chembl.model;
 
+import java.io.Serializable;
 import java.util.Date;
 
 
 /**
  * The patent metadata
  */
-public class PatentMetadata {
+public class PatentMetadata implements Serializable {
 
     /** Database Patent ID */
     private final long id;

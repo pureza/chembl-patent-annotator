@@ -15,10 +15,4 @@ public interface Annotator {
      * Returns the list of annotations found in the given text
      */
     List<Annotation> annotate(String text);
-
-
-    /**
-     * Shuts down the annotator
-     */
-    void shutdown();
 }

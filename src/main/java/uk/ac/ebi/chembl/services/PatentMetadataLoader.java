@@ -39,7 +39,7 @@ public class PatentMetadataLoader {
      */
     public void loadNewPatents() {
         logger.info("Looking for new patents in {}, to copy them to {}...", env.getProperty("surechem.url"),
-                env.getProperty("patentannot.url"));
+                env.getProperty("${patentannot.url}"));
 
         // First, retrieve the patents that were added last
         List<PatentMetadata> previousPatents = repository.getMostRecentPatents();
