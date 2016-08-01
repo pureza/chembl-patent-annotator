@@ -1,5 +1,7 @@
 # Patent annotator for ChEMBL
 
+> The `spark` branch contains a mostly functional version of the Patent Annotator that runs on top of Apache Spark/Hadoop.
+
 ## Introduction
 This document describes the **patent annotator**, the software developed to annotate new patents periodically and collect the list of patents with occurrences of relevant IDG targets.
 
