@@ -1,0 +1,55 @@
+<configuration>
+
+    <!-- Evaluates the address to where error emails should be sent on runtime, based on the configuration -->
+    <conversionRule conversionWord="smtpTo" converterClass="uk.ac.ebi.chembl.logging.SmtpToConverter" />
+
+    <!-- Console appender: level >= INFO -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %-20t %-40logger{0} %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File appender: level >= DEBUG -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/patent-annotator.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/patent-annotator.%d{ddMMMyyyy}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %-20t %-40logger{0} %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- E-mail appender: level >= WARN -->
+    <appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+        <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator">
+            <expression>return level >= WARN;</expression>
+        </evaluator>
+
+        <smtpHost>${smtpHost}</smtpHost>
+        <to>%smtpTo</to>
+        <from>${from}</from>
+        <subject>Patent Annotator: %m</subject>
+        <layout class="ch.qos.logback.classic.html.HTMLLayout">
+            <pattern>%d{HH:mm:ss}%level%t%logger%msg</pattern>
+        </layout>
+        <asynchronousSending>false</asynchronousSending>
+    </appender>
+
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+        <appender-ref ref="EMAIL" />
+    </root>
+
+    <!-- Hide Spring messages -->
+    <logger name="org.springframework" level="WARN" />
+
+    <!-- Hide Spring Boot startup messages -->
+    <logger name="uk.ac.ebi.chembl.AnnotatorApp" level="WARN" />
+</configuration>
