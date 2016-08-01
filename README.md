@@ -127,6 +127,7 @@ The patent annotator requires reasonably up-to-date versions of:
 * Java 8
 * Apache Maven
 * MySQL
+* Tagger library and its dictionaries
 
 ### Building the jar
 
@@ -217,7 +218,7 @@ Furthermore, the application accepts two optional command line arguments:
 If you wish to discard all the annotations collected before and start from scratch, you can do so by passing the `--clear-db=true` command line argument:
 
 ```bash
-$ java -Djava.library.path=./tagger-java/libtagger -Xmx32g -jar patent-annotator-1.0-SNAPSHOT.jar --clear-db=true
+$ java -Djava.library.path=./tagger-java/libtagger -Xmx32g -jar patent-annotator-1.0.jar --clear-db=true
 ```
 
 ```
@@ -269,7 +270,7 @@ INFO  main                 EnsemblService                           The Ensembl 
 INFO  main                 EnsemblService                           Mapped 19,504 Ensembl Peptide ids to UniProt accessions. 2,464 ids were not mapped!
  
 # Looking for new patents. Since the database is empty, it will retrieve all patents from SurePro
-INFO  pipeline-thread-0    PatentMetadataLoader                     Looking for new patents in jdbc:mysql://54.77.227.201/patent_anno_20120302, to copy them to jdbc:mysql://sark.ebi.ac.uk:3306/patent_annot?rewriteBatchedStatements=true&useSSL=false...
+INFO  pipeline-thread-0    PatentMetadataLoader                     Looking for new patents in ${surepro.url}, to copy them to ${patentannot.url}...
 WARN  pipeline-thread-0    PatentMetadataLoader                     The annotation database is empty!
 INFO  pipeline-thread-0    PatentMetadataLoader                     Loading the metadata for ALL patents. This will take a few minutes...
 INFO  pipeline-thread-0    PatentMetadataLoader                     Finished copying the metadata of 3,725,720 patents!
@@ -302,7 +303,7 @@ INFO  main                 DictionaryRepository                     Loaded the d
 INFO  main                 DictionaryAnalyzer                       Checking the dictionary...
  
 # Looking for new patents. The difference between the number of new patents and the number of patents to annotate (341) corresponds to the patents for which it was unable to download the XML last time
-INFO  pipeline-thread-0    PatentMetadataLoader                     Looking for new patents in jdbc:mysql://54.77.227.201/patent_anno_20120302, to copy them to jdbc:mysql://sark.ebi.ac.uk:3306/patent_annot?rewriteBatchedStatements=true&useSSL=false...
+INFO  pipeline-thread-0    PatentMetadataLoader                     Looking for new patents in ${surechem.url}, to copy them to ${patentannot.url}...
 INFO  pipeline-thread-0    PatentMetadataLoader                     The most recent patent in the annotation database was published on 2016-04-07
 INFO  pipeline-thread-0    PatentMetadataLoader                     Finished copying the metadata of 57,819 patents!
 WARN  pipeline-thread-0    PatentMetadataLoadStep                   Going to annotate 58,160 patents...
