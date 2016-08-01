@@ -207,7 +207,7 @@ In order to override the default configuration, one just needs to put it in a fi
 To execute the patent annotator, one just needs to execute the jar:
 
 ```bash
-$ java -Djava.library.path=./tagger-java/libtagger -Xmx32g -jar patent-annotator-1.0.jar
+$ java -Djava.library.path=/path/to/libtagger -Xmx32g -jar patent-annotator-1.0.jar
 ```
 Furthermore, the application accepts two optional command line arguments:
 
@@ -218,7 +218,7 @@ Furthermore, the application accepts two optional command line arguments:
 If you wish to discard all the annotations collected before and start from scratch, you can do so by passing the `--clear-db=true` command line argument:
 
 ```bash
-$ java -Djava.library.path=./tagger-java/libtagger -Xmx32g -jar patent-annotator-1.0.jar --clear-db=true
+$ java -Djava.library.path=/path/to/libtagger -Xmx32g -jar patent-annotator-1.0.jar --clear-db=true
 ```
 
 ```
